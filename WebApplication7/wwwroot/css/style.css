@@ -1,5 +1,6 @@
 ﻿body * { 
     font-family: Arial;
+    user-select: none;
 }
 .btn{ 
     width: 300px;
@@ -13,7 +14,6 @@
     width: 500px;
     height: 500px;
     border: 1px solid grey;
-    /*margin: 0 auto;*/
 }
 
 .row { 
