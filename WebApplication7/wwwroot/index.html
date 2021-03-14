@@ -33,8 +33,23 @@
         </div>
         <div class="row">
             <input type="button" name="clear" id="clear-btn" value="Clear" />
-
         </div>
+
+        <div class="row">
+            <div id="create-room-btn" class="btn">Create room</div>
+            <div id="connect-room-btn" class="btn">Connect to room</div>
+        </div>
+           
+        <div class="row" id="connection-id-wrapper">
+            <span>Your connection token: </span>
+            <div id="connection-id"></div>
+        </div>
+        
+        <hr>
+
+        <h3>Connected users: </h3>
+        <ul id="connected-users">
+        </ul>
     </div>
 
     <script src="./js/microsoft/signalr/dist/browser/signalr.min.js"></script>

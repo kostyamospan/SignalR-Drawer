@@ -1,6 +1,4 @@
-﻿
-
-class Canvas {
+﻿class Canvas {
     constructor(canvasDOM, canvasSideSize, xyLinesCount) {
         this.canvasDOM = canvasDOM;
 
@@ -28,6 +26,7 @@ class Canvas {
             this.cellSize,
             this.cellSize
         );
+
     }
 
 
@@ -77,14 +76,31 @@ function getCanvas(canvasId, cellSize = 1000) {
 
 
 function hubSetup(hubConn) {
-    hubConn.on("drawPoint", (point) => {
+    hubConn.on("updateClient", (point) => {
         let desPoint = JSON.parse(point);
         Object.setPrototypeOf(desPoint.color, toRGBAStringMixin);
         canvas.drawPoint(desPoint.x, desPoint.y, desPoint.color);
     });
+
+    hubConn.on("clearDrawer", (point) => {
+        canvas.clear();
+    });
 }
 
+function appendChildTagDOM(parent, tag, childContent) {
+    let tagDOM = document.createElement(tag);
+    tagDOM.innerHTML = childContent;
 
+    parent.appendChild(tagDOM);
+}
+
+function updateConnectedUsers(listDOM, usersList) {
+    listDOM.innerHTML = "";
+
+    usersList.forEach(el => {
+        appendChildTagDOM(listDOM, "li", el);
+    });
+}
 
 
 const DEFAULT_FILL_COLOR = new Color(0, 0, 0, 1);
@@ -102,6 +118,12 @@ let canvas = getCanvas("draw-canvas");
 let colorPicker = document.getElementById("color-picker");
 let colorOpacity = document.getElementById("color-opacity");
 
+let connectionId = document.getElementById("connection-id");
+let connectionWrapper = document.getElementById("connection-id-wrapper");
+let connectedUsers = document.getElementById("connected-users");
+
+var currentRoomId = null;
+
 canvas.canvasLineUp(canvas, 30, 30);
 
 colorPicker.addEventListener("change", (ev) => {
@@ -118,12 +140,41 @@ colorOpacity.addEventListener("change", (ev) => {
     currentFillColor.a = parseFloat(colorOpacity.value);
 });
 
-document.getElementById("clear-btn").addEventListener("click", (ev) => {
+document.getElementById("clear-btn").addEventListener("click",async (ev) => {
+    await hubConn.invoke("ClearDrawer", currentRoomId);
+
     canvas.clear();
+});
+
+document.getElementById("create-room-btn").addEventListener("click", async (ev) => {
+    let id = await hubConn.invoke("CreateRoom", "msg");
+    connectionWrapper.style = "visibility: unset";
+
+    connectionId.innerText = id;
+    currentRoomId = id;
+});
+
+document.getElementById("connect-room-btn").addEventListener("click", async (ev) => {
+    let id = prompt("Enter room id, please");
+
+    let res = await hubConn.invoke("ConnectToRoom", id);
+    let parsedRes = JSON.parse(res);
+
+    if (parsedRes != null) {
+        currentRoomId = id;
+        updateConnectedUsers(connectedUsers, parsedRes);
+    }
+
+    console.log(res);
 });
 
 
 canvas.canvasDOM.onclick = function (event) {
+    if (currentRoomId == null) {
+        alert("Firstly, create a room or connect to existing one");
+        return;
+    }
+
     let bound = canvas.canvasDOM.getBoundingClientRect();
 
     let x = event.clientX - bound.left - canvas.canvasDOM.clientLeft;
@@ -131,7 +182,8 @@ canvas.canvasDOM.onclick = function (event) {
 
     canvas.drawPoint(x, y, currentFillColor);
 
-    hubConn.invoke("AddPoint", JSON.stringify({ x: x, y: y, color: currentFillColor }));
+    hubConn.invoke("UpdateClients", currentRoomId, JSON.stringify({ x: x, y: y, color: currentFillColor }));
+
 };
 
 
