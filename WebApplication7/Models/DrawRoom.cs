@@ -1,11 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace WebApplication7.Models
 {
     public class DrawRoom
     {
-        private HashSet<string> connectedUsers = new HashSet<string>();
+        private HashSet<HubUser> _connectedUsers = new HashSet<HubUser>();
+
+        private HashSet<DrawPointModel> _fieldState = new HashSet<DrawPointModel>(new DrawPointModelComparer());
 
         public string RoomId { get; private set; }
 
@@ -18,10 +21,18 @@ namespace WebApplication7.Models
         public DrawRoom() { }
 
 
-        public void AddUser(string connId) => connectedUsers.Add(connId);
+        public void AddUser(HubUser newUser) => _connectedUsers.Add(newUser);
 
-        public void RemoveUser(string connId) => connectedUsers.Remove(connId);
+        public void RemoveUser(HubUser user) => _connectedUsers.Remove(user);
 
-        public IReadOnlyList<string> GetAllUsers() => connectedUsers.ToList().AsReadOnly();
+        public void AddPointToField(DrawPointModel p) => _fieldState.Add(p);
+
+        public void ClearField() => _fieldState.Clear();
+
+        public IReadOnlyList<HubUser> GetAllUsers() => _connectedUsers.ToList().AsReadOnly();
+
+        public IReadOnlyList<string> GetAllUsersId() => _connectedUsers.Select(x => x.ConnectionId).ToList().AsReadOnly();
+
+        public IReadOnlyList<DrawPointModel> GetAllPoint() => _fieldState.ToList().AsReadOnly();
     }
 }

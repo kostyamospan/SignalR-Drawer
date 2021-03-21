@@ -14,6 +14,6 @@ namespace WebApplication7.Models
         public byte B { get; set; }
         
         [JsonPropertyName("a")]
-        public byte A { get; set; }
+        public float A { get; set; }
     }
 }

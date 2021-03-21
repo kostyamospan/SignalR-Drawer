@@ -1,4 +1,6 @@
 ﻿class Canvas {
+    #pointSet;
+
     constructor(canvasDOM, canvasSideSize, xyLinesCount) {
         this.canvasDOM = canvasDOM;
 
@@ -11,9 +13,13 @@
         this.cellSize = canvasSideSize / xyLinesCount;
 
         this.linesCount = xyLinesCount;
+
+        this.#pointSet = new Set();
     }
 
-    drawPoint(xAbs, yAbs, color) {
+    #drawPoint(point) {
+        let xAbs = point.x, yAbs = point.y, color = point.color;
+
         this.context.fillStyle = color.toRGBAString();
 
         let canvasXPos = Math.trunc((xAbs * this.canvasDOM.width / this.canvasDOM.clientWidth) / this.cellSize);
@@ -29,6 +35,28 @@
 
     }
 
+    // #drawAllPoints(points) {
+    //     points.forEach((p) => {
+    //         this.drawPoint(p);
+    //     });
+    // }
+
+    addManyPoints(points) {
+        points.forEach((p) => {
+            if (!this.#pointSet.has(p)) {
+                this.#pointSet.add(p);
+                this.#drawPoint(p);
+            }
+        });
+    }
+
+    addPoint(point) {
+        if (!this.#pointSet.has(point)) {
+            this.#pointSet.add(point);
+            this.#drawPoint(point);
+        }
+
+    }
 
     canvasLineUp() {
         let step = this.canvasSideSize / this.linesCount;
@@ -71,7 +99,7 @@ let toRGBAStringMixin = {
 
 function getCanvas(canvasId, cellSize = 1000) {
     let canvas = document.getElementById(canvasId);
-    return new Canvas(canvas, 1000, 25);
+    return new Canvas(canvas, cellSize, 25);
 }
 
 
@@ -79,11 +107,25 @@ function hubSetup(hubConn) {
     hubConn.on("updateClient", (point) => {
         let desPoint = JSON.parse(point);
         Object.setPrototypeOf(desPoint.color, toRGBAStringMixin);
-        canvas.drawPoint(desPoint.x, desPoint.y, desPoint.color);
+        canvas.addPoint(desPoint);
     });
 
-    hubConn.on("clearDrawer", (point) => {
+    hubConn.on("clearDrawer", (p) => {
         canvas.clear();
+    });
+
+    hubConn.on("onUserLeavesRoom", (userId) => {
+        let nodes = Array.from(listDOM.childNodes);
+        for (let i = 0; i < nodes.length; i++) {
+            if (nodes[i].innerText == userId) {
+                listDOM.removeChild(nodes[i]);
+                break;
+            }
+        }
+    });
+
+    hubConn.on("onUserConnectToRoom", (userId) => {
+        appendChildTagDOM(listDOM, "li", userId);
     });
 }
 
@@ -99,6 +141,12 @@ function updateConnectedUsers(listDOM, usersList) {
 
     usersList.forEach(el => {
         appendChildTagDOM(listDOM, "li", el);
+    });
+}
+
+function setAllObjectPrototypes(objArr, prot, fieldName) {
+    objArr.forEach((o) => {
+        Object.setPrototypeOf(o[fieldName], prot);
     });
 }
 
@@ -140,7 +188,7 @@ colorOpacity.addEventListener("change", (ev) => {
     currentFillColor.a = parseFloat(colorOpacity.value);
 });
 
-document.getElementById("clear-btn").addEventListener("click",async (ev) => {
+document.getElementById("clear-btn").addEventListener("click", async (ev) => {
     await hubConn.invoke("ClearDrawer", currentRoomId);
 
     canvas.clear();
@@ -162,7 +210,9 @@ document.getElementById("connect-room-btn").addEventListener("click", async (ev)
 
     if (parsedRes != null) {
         currentRoomId = id;
-        updateConnectedUsers(connectedUsers, parsedRes);
+        setAllObjectPrototypes(parsedRes.fieldState, toRGBAStringMixin, "color");
+        updateConnectedUsers(connectedUsers, parsedRes.connectedUsers);
+        canvas.addManyPoints(parsedRes.fieldState);
     }
 
     console.log(res);
@@ -180,10 +230,11 @@ canvas.canvasDOM.onclick = function (event) {
     let x = event.clientX - bound.left - canvas.canvasDOM.clientLeft;
     let y = event.clientY - bound.top - canvas.canvasDOM.clientTop;
 
-    canvas.drawPoint(x, y, currentFillColor);
+    let p = { x: x, y: y, color: currentFillColor };
 
-    hubConn.invoke("UpdateClients", currentRoomId, JSON.stringify({ x: x, y: y, color: currentFillColor }));
+    canvas.addPoint(p);
 
+    hubConn.invoke("UpdateClients", currentRoomId, JSON.stringify(p));
 };
 
 
