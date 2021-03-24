@@ -30,10 +30,12 @@ namespace WebApplication7
             }
 
             app.UseDefaultFiles();
-            //app.UseStaticFiles();
+
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
 
             app.UseRouting();
-            
+
 
 
             app.UseEndpoints(endpoints =>
