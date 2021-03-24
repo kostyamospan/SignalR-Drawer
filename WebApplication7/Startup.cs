@@ -18,7 +18,7 @@ namespace WebApplication7
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSignalR();
-            
+            services.AddRazorPages();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -30,7 +30,7 @@ namespace WebApplication7
             }
 
             app.UseDefaultFiles();
-            app.UseStaticFiles();
+            //app.UseStaticFiles();
 
             app.UseRouting();
             
@@ -38,11 +38,11 @@ namespace WebApplication7
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGet("/", async context =>
+                /*endpoints.MapGet("/", async context =>
                 {
                     await context.Response.WriteAsync(System.IO.File.ReadAllText("~/index.html"));
-                });
-
+                });*/
+                endpoints.MapRazorPages();
                 endpoints.MapHub<DrawHub>("/draw");
             });
         }

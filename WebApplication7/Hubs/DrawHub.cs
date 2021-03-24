@@ -80,7 +80,7 @@ namespace WebApplication7.Hubs
 
             room.AddPointToField(point);
 
-            await Clients.Clients(room.GetAllUsersId()).SendAsync("updateClient", data);
+            await Clients.Clients(room.GetAllUsersId().Where(x => x != Context.ConnectionId).ToList().AsReadOnly()).SendAsync("updateClient", data);
         }
 
         public string CreateRoom(string msg)
@@ -149,7 +149,7 @@ namespace WebApplication7.Hubs
             if (room is null) return;
 
             await Clients.Clients(
-                room.GetAllUsersId().Where( x=> x != connUser.ConnectionId).ToList().AsReadOnly()
+                room.GetAllUsersId().Where(x => x != connUser.ConnectionId).ToList().AsReadOnly()
                 ).SendAsync(
                 "onUserConnectToRoom",
                 connUser.ConnectionId);
