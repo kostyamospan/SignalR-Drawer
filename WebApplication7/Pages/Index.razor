@@ -1,6 +1,16 @@
-﻿@page
+﻿@page "/"
+@using Drawer.Pages
+@using Blazor.Extensions.Canvas
+
+@inherits IndexComponent
+
+@{  
+    this.CanvasSideSize = 1000;
+    this.LinesCount =  25;
+}
+
 <div class="main">
-    <canvas id="draw-canvas"></canvas>
+    <BECanvas Height="500" Width="500" @ref="CanvasComponent"></BECanvas>
 
     <div class="row">
         <table>

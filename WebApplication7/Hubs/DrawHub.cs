@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Linq;
 
-namespace WebApplication7.Hubs
+namespace Drawer.Hubs
 {
     public class DrawHub : Hub
     {

@@ -7,9 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using WebApplication7.Hubs;
+using Drawer.Hubs;
 
-namespace WebApplication7
+namespace Drawer
 {
     public class Startup
     {
@@ -19,6 +19,7 @@ namespace WebApplication7
         {
             services.AddSignalR();
             services.AddRazorPages();
+            services.AddServerSideBlazor();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -44,8 +45,9 @@ namespace WebApplication7
                 {
                     await context.Response.WriteAsync(System.IO.File.ReadAllText("~/index.html"));
                 });*/
-                endpoints.MapRazorPages();
                 endpoints.MapHub<DrawHub>("/draw");
+                endpoints.MapBlazorHub();
+                endpoints.MapFallbackToPage("/_Host");
             });
         }
     }
