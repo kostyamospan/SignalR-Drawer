@@ -18,6 +18,7 @@ namespace WebApplication7
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSignalR();
+            services.AddRazorPages();
             
         }
 
@@ -38,11 +39,11 @@ namespace WebApplication7
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGet("/", async context =>
+                /*endpoints.MapGet("/", async context =>
                 {
                     await context.Response.WriteAsync(System.IO.File.ReadAllText("~/index.html"));
-                });
-
+                });*/
+                endpoints.MapRazorPages();
                 endpoints.MapHub<DrawHub>("/draw");
             });
         }

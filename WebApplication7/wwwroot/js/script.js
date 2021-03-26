@@ -150,6 +150,30 @@ function setAllObjectPrototypes(objArr, prot, fieldName) {
     });
 }
 
+async function connectToRoom(roomId, onSuccessConnection) {
+    if (roomId == null) return;
+
+    let res = await hubConn.invoke("ConnectToRoom", roomId);
+
+    if (res != null) {
+        updateRoomId(roomId);
+        onSuccessConnection(JSON.parse(res));
+    } else {
+        throw new Error("Cannot connect to room");
+    }
+}
+
+function onToRoomConnected(data) {
+    setAllObjectPrototypes(data.fieldState, toRGBAStringMixin, "color");
+    updateConnectedUsers(connectedUsers, data.connectedUsers);
+    canvas.addManyPoints(data.fieldState);
+}
+
+function updateRoomId(newId) {
+    currentRoomIdDOM.value = newId;
+    currentRoomId = newId;
+}
+
 
 const DEFAULT_FILL_COLOR = new Color(0, 0, 0, 1);
 
@@ -160,7 +184,7 @@ let hubConn = new signalR.HubConnectionBuilder()
     .build();
 
 hubSetup(hubConn);
-hubConn.start();
+
 
 let canvas = getCanvas("draw-canvas");
 let colorPicker = document.getElementById("color-picker");
@@ -170,9 +194,19 @@ let connectionId = document.getElementById("connection-id");
 let connectionWrapper = document.getElementById("connection-id-wrapper");
 let connectedUsers = document.getElementById("connected-users");
 
-var currentRoomId = null;
+let currentRoomIdDOM = document.getElementById("current-room-id");
+
+var currentRoomId = currentRoomIdDOM.value == "null" ? null : currentRoomIdDOM.value;
+
 
 canvas.canvasLineUp(canvas, 30, 30);
+
+hubConn.start().then(() => {
+    connectToRoom(currentRoomId, onToRoomConnected).catch((r) => {
+        currentRoomId = null;
+        alert("CANNOT CONNECT TO ROOM");
+    });
+})
 
 colorPicker.addEventListener("change", (ev) => {
     let color = colorPicker.value;
@@ -199,21 +233,13 @@ document.getElementById("create-room-btn").addEventListener("click", async (ev) 
     connectionWrapper.style = "visibility: unset";
 
     connectionId.innerText = id;
-    currentRoomId = id;
+    updateRoomId(id);
 });
 
 document.getElementById("connect-room-btn").addEventListener("click", async (ev) => {
     let id = prompt("Enter room id, please");
 
-    let res = await hubConn.invoke("ConnectToRoom", id);
-    let parsedRes = JSON.parse(res);
-
-    if (parsedRes != null) {
-        currentRoomId = id;
-        setAllObjectPrototypes(parsedRes.fieldState, toRGBAStringMixin, "color");
-        updateConnectedUsers(connectedUsers, parsedRes.connectedUsers);
-        canvas.addManyPoints(parsedRes.fieldState);
-    }
+    await connectToRoom(id, onToRoomConnected);
 
     console.log(res);
 });
